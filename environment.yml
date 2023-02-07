@@ -1,6 +1,13 @@
 name: biocide-resistance-scanner
+channels:
+  - anaconda
+  - conda-forge
+  - bioconda
 dependencies:
-  - python=3.8
+  - python=3.7
+  - islandpath
+  - abricate
+  - blast
   - pip
   - pip:
     - -r requirements.txt
