@@ -5,6 +5,8 @@ channels:
   - bioconda
 dependencies:
   - python=3.7
+  - perl-bioperl>=1.7.2
+  - perl-bioperl-core
   - islandpath
   - abricate
   - blast
