@@ -3,7 +3,8 @@ from argparse import ArgumentParser
 import subprocess, os
 from Bio import SeqIO
 from Bio.Blast import NCBIXML
-
+import pandas as pd
+import os
 
 parser = argparse.ArgumentParser(
                     prog = 'BiocideResistScanner',
@@ -23,11 +24,35 @@ def main ():
 
     blast_xml = os.path.join(arguments.output, 'bacmet2.xml')
 
-    run_blast_bacmet(input_proteins_fasta, blast_xml)
+    blast_results = run_blast_bacmet(input_proteins_fasta, blast_xml, "bacmet2_exp")
+    
+    bacmet_mapping = pd.read_csv('data/dbs/bacmet2/BacMet2_EXP.753.mapping.txt', sep='\t') 
+
+    bacmet_hits = []
+
+    for record in blast_results: 
+        for alignment in record.alignments:
+            bacmet_hit_data = {'query_id': record.query}
+            bacmet_id =  alignment.hit_def.split("|")[0]
+            bacmet_hit_data['bacmet_id'] = alignment.hit_def.split("|")[0]
+            bacmet_hit_info = bacmet_mapping.query('BacMet_ID == @bacmet_id').iloc[0]
+            bacmet_hit_data['gene_name'] = bacmet_hit_info.Gene_name
+            bacmet_hit_data['accession'] = bacmet_hit_info.Accession
+            bacmet_hit_data['organism'] = bacmet_hit_info.Organism
+            bacmet_hit_data['location'] = bacmet_hit_info.Location
+            bacmet_hit_data['compound'] = bacmet_hit_info.Compound
+            bacmet_hit_info['identity'] = alignment.hsps[0].identities / alignment.hsps[0].align_length
+            bacmet_hit_info['e-value'] = alignment.hsps[0].expect
+            bacmet_hits.append(bacmet_hit_data)
+            break
+    
+    pd.DataFrame(bacmet_hits).to_csv(os.path.join(arguments.output, 'bacmet_hits.csv'))
 
 
-def run_blast_bacmet(input_fasta_file, output_xml_file):
-    subprocess.call(f"blastp -query {input_fasta_file} -db data/dbs/bacmet2/bacmet2_pred -outfmt 5 -out {output_xml_file}", shell=True)
+
+
+def run_blast_bacmet(input_fasta_file, output_xml_file, db):
+    os.system(f"blastp -query {input_fasta_file} -evalue 1e-100 -db data/dbs/bacmet2/{db} -outfmt 5 -out {output_xml_file}")#, shell=True)
     return NCBIXML.parse(open(output_xml_file))
 
 def run_converter_gbk_to_fna (input_gbk_file, output_fna_file):
