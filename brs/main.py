@@ -49,8 +49,6 @@ def main ():
     pd.DataFrame(bacmet_hits).to_csv(os.path.join(arguments.output, 'bacmet_hits.csv'))
 
 
-
-
 def run_blast_bacmet(input_fasta_file, output_xml_file, db):
     os.system(f"blastp -query {input_fasta_file} -evalue 1e-100 -db data/dbs/bacmet2/{db} -outfmt 5 -out {output_xml_file}")#, shell=True)
     return NCBIXML.parse(open(output_xml_file))
@@ -59,7 +57,7 @@ def run_converter_gbk_to_fna (input_gbk_file, output_fna_file):
 
     output_handle = open(output_fna_file, "w")
 
-    for seq_record in SeqIO.parse(open(input_gbk_file), "genbank") :
+    for seq_record in SeqIO.parse(open(input_gbk_file), "genbank"):
         for seq_feature in seq_record.features :
             if seq_feature.type=="CDS" :
                 output_handle.write(">%s\n%s\n" % (
@@ -73,7 +71,14 @@ def run_abricate (input_file, output_file, abricate_setupdb):
     if abricate_setupdb == True:
         subprocess.call(f"abricate --setupdb", shell=True)
     subprocess.call(f"abricate --db plasmidfinder {input_file} > {output_file}", shell=True)
-    
+
+def run_platon (input_file, output_directory):
+    filename, fileext = os.path.splitext(input_file)
+    if fileext in ['.gb', '.gbfk', '.gbff']:
+        records = SeqIO.parse(input_file,'genbank')
+        SeqIO.write(records, os.path.join(output_directory,'genome.fasta'))
+        input_file = os.path.join(output_directory, 'genome.fasta')
+    subprocess.call(f'platon --db data/dbs/platon/db/ -o {output_directory} {input_file}', shell=True)
 
 if __name__ == '__main__':
     main()

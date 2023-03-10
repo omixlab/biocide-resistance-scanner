@@ -1,5 +1,7 @@
 # data
 data/dbs/*
+tests/*
+data/paper/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
