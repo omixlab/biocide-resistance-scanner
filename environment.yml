@@ -10,5 +10,6 @@ dependencies:
   - platon
   - pip
   - java-jre
+  - jupyter
   - pip:
     - -r requirements.txt
