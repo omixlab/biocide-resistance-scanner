@@ -31,7 +31,7 @@ def main ():
     abricate_results  = run_abricate(arguments.input, os.path.join(arguments.output, 'abricate.tab'))
 
     print('Running BLAST against BacMet to find biocide resistance genes ...')
-    bacmet_results    = run_blast_bacmet(input_genome_fasta, bacmet_blast_xml)
+    bacmet_results    = run_blast_bacmet(input_genome_fasta, arguments.output)
 
     print('Running Platon to find plasmids ...')
     platon_results    = run_platon(input_genome_fasta, arguments.output)
@@ -41,8 +41,11 @@ def main ():
 
     print(ssg_lugia_results)
 
-def run_blast_bacmet(input_fasta_file, output_xml_file, db='bacmet2_exp', evalue=1e-100):
+def run_blast_bacmet(input_fasta_file, output_directory, db='bacmet2_exp', evalue=1e-100):
     
+    output_xml_file = os.path.join(output_directory, 'bacmet.xml')
+    output_csv_file = os.path.join(output_directory, 'bacmet.csv')
+
     subprocess.call(f"blastp -query {input_fasta_file} -evalue {evalue} -db data/dbs/bacmet2/{db} -outfmt 5 -out {output_xml_file}", shell=True, stdout=DEVNULL, stderr=DEVNULL)
         
     bacmet_mapping = pd.read_csv('data/dbs/bacmet2/BacMet2_EXP.753.mapping.txt', sep='\t') 
@@ -64,6 +67,9 @@ def run_blast_bacmet(input_fasta_file, output_xml_file, db='bacmet2_exp', evalue
             bacmet_hit_info['e-value'] = alignment.hsps[0].expect
             bacmet_hits.append(bacmet_hit_data)
             break
+
+    df_bacmet_hits = pd.DataFrame(bacmet_hits)
+    df_bacmet_hits.to_csv(output_csv_file, index=False)
     
     return pd.DataFrame(bacmet_hits)
 
