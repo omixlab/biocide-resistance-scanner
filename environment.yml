@@ -3,10 +3,12 @@ channels:
   - anaconda
   - conda-forge
   - bioconda
+  - cyclus
 dependencies:
   - python=3.7
   - abricate
   - platon
   - pip
+  - java-jre
   - pip:
     - -r requirements.txt
