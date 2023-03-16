@@ -1,36 +1,55 @@
 import argparse
 from argparse import ArgumentParser
+from ssg_lugia.main import SSG_LUGIA
 import subprocess, os
 from Bio import SeqIO
 from Bio.Blast import NCBIXML
 import pandas as pd
-import os
+import json
+
+DEVNULL = open(os.devnull, 'w')
 
 parser = argparse.ArgumentParser(
                     prog = 'BiocideResistScanner',
                     description = 'A tool to indetify biocide resistant genes in bacteria')
 def main ():
+
     argument_parser = ArgumentParser(description='Bacterial genome in a FASTA/Genbank file')
     argument_parser.add_argument('--input', required=True, help='Input FASTA/Genbank file')
     argument_parser.add_argument('--output', required=True, help='Output CSV file')
-    argument_parser.add_argument('--abricate-setupdb', help='Runs abricate database setup', action='store_true', default=False)
     arguments = argument_parser.parse_args()
 
-    run_abricate(arguments.input, os.path.join(arguments.output, 'abricate.tab'), arguments.abricate_setupdb)
-
+    input_genome_fasta = os.path.join(arguments.output, 'genome.fasta')
     input_proteins_fasta = os.path.join(arguments.output, 'proteins.fasta')
 
-    run_converter_gbk_to_fna(arguments.input, input_proteins_fasta)
+    bacmet_blast_xml = os.path.join(arguments.output, 'bacmet.xml')
 
-    blast_xml = os.path.join(arguments.output, 'bacmet2.xml')
+    run_converter_gbk_to_genome_fna(arguments.input, input_genome_fasta)
+    run_converter_gbk_to_protein_fna(arguments.input, input_proteins_fasta)
 
-    blast_results = run_blast_bacmet(input_proteins_fasta, blast_xml, "bacmet2_exp")
+    print('Running Abricate to find antibiotic resistance genes ...')
+    abricate_results  = run_abricate(arguments.input, os.path.join(arguments.output, 'abricate.tab'))
+
+    print('Running BLAST against BacMet to find biocide resistance genes ...')
+    bacmet_results    = run_blast_bacmet(input_genome_fasta, bacmet_blast_xml)
+
+    print('Running Platon to find plasmids ...')
+    platon_results    = run_platon(input_genome_fasta, arguments.output)
     
+    print('Running SSG-LUGIA to find genomic islands ...')
+    ssg_lugia_results = run_ssg_lugia(input_genome_fasta, arguments.output)
+
+    print(ssg_lugia_results)
+
+def run_blast_bacmet(input_fasta_file, output_xml_file, db='bacmet2_exp', evalue=1e-100):
+    
+    subprocess.call(f"blastp -query {input_fasta_file} -evalue {evalue} -db data/dbs/bacmet2/{db} -outfmt 5 -out {output_xml_file}", shell=True, stdout=DEVNULL, stderr=DEVNULL)
+        
     bacmet_mapping = pd.read_csv('data/dbs/bacmet2/BacMet2_EXP.753.mapping.txt', sep='\t') 
 
     bacmet_hits = []
 
-    for record in blast_results: 
+    for record in NCBIXML.parse(open(output_xml_file)): 
         for alignment in record.alignments:
             bacmet_hit_data = {'query_id': record.query}
             bacmet_id =  alignment.hit_def.split("|")[0]
@@ -46,14 +65,14 @@ def main ():
             bacmet_hits.append(bacmet_hit_data)
             break
     
-    pd.DataFrame(bacmet_hits).to_csv(os.path.join(arguments.output, 'bacmet_hits.csv'))
+    return pd.DataFrame(bacmet_hits)
 
+def run_converter_gbk_to_genome_fna(input_gbk_file, output_fna_file):
 
-def run_blast_bacmet(input_fasta_file, output_xml_file, db):
-    os.system(f"blastp -query {input_fasta_file} -evalue 1e-100 -db data/dbs/bacmet2/{db} -outfmt 5 -out {output_xml_file}")#, shell=True)
-    return NCBIXML.parse(open(output_xml_file))
+    records = SeqIO.parse(input_gbk_file, 'genbank')
+    SeqIO.write(records, output_fna_file, 'fasta')    
 
-def run_converter_gbk_to_fna (input_gbk_file, output_fna_file):
+def run_converter_gbk_to_protein_fna (input_gbk_file, output_fna_file):
 
     output_handle = open(output_fna_file, "w")
 
@@ -66,19 +85,23 @@ def run_converter_gbk_to_fna (input_gbk_file, output_fna_file):
                 
     output_handle.close()
 
-
-def run_abricate (input_file, output_file, abricate_setupdb):
-    if abricate_setupdb == True:
-        subprocess.call(f"abricate --setupdb", shell=True)
-    subprocess.call(f"abricate --db plasmidfinder {input_file} > {output_file}", shell=True)
+def run_abricate (input_file, output_file, database='card'):
+    subprocess.call(f"abricate --db {database} {input_file} > {output_file}", shell=True, stdout=DEVNULL, stderr=DEVNULL)
 
 def run_platon (input_file, output_directory):
-    filename, fileext = os.path.splitext(input_file)
-    if fileext in ['.gb', '.gbfk', '.gbff']:
-        records = SeqIO.parse(input_file,'genbank')
-        SeqIO.write(records, os.path.join(output_directory,'genome.fasta'))
-        input_file = os.path.join(output_directory, 'genome.fasta')
-    subprocess.call(f'platon --db data/dbs/platon/db/ -o {output_directory} {input_file}', shell=True)
+
+    subprocess.call(f'platon --db data/dbs/platon/db/ -o {output_directory} {input_file}', shell=True, stdout=DEVNULL, stderr=DEVNULL)
+
+def run_ssg_lugia(input_file, output_directory):
+
+    islands = {}
+    for r, record in enumerate(SeqIO.parse(input_file, 'fasta')):
+        temp_record_fasta = os.path.join(output_directory, f'genome_{r}.fasta')
+        SeqIO.write([record], temp_record_fasta, 'fasta')
+        islands[record.id] = SSG_LUGIA(sequence_fasta_file_path=temp_record_fasta, model_name='SSG-LUGIA-F')
+    with open(os.path.join(output_directory, 'ssg_lugia.json'), 'w') as writer:
+        writer.write(json.dumps(islands))
+    return islands
 
 if __name__ == '__main__':
     main()
