@@ -11,7 +11,7 @@ DEVNULL = open(os.devnull, 'w')
 
 parser = argparse.ArgumentParser(
                     prog = 'BiocideResistScanner',
-                    description = 'A tool to indetify biocide resistant genes in bacteria')
+                    description = 'A tool to identify biocide resistant genes in bacteria')
 def main ():
 
     argument_parser = ArgumentParser(description='Bacterial genome in a FASTA/Genbank file')
@@ -31,7 +31,7 @@ def main ():
     abricate_results  = run_abricate(arguments.input, os.path.join(arguments.output, 'abricate.tab'))
 
     print('Running BLAST against BacMet to find biocide resistance genes ...')
-    bacmet_results    = run_blast_bacmet(input_genome_fasta, arguments.output)
+    bacmet_results    = run_blast_bacmet(input_proteins_fasta, arguments.output)
 
     print('Running Platon to find plasmids ...')
     platon_results    = run_platon(input_genome_fasta, arguments.output)
