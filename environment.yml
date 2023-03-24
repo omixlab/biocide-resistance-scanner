@@ -11,5 +11,6 @@ dependencies:
   - pip
   - java-jre
   - jupyter
+  - phispy
   - pip:
     - -r requirements.txt
