@@ -1,6 +1,6 @@
 pandas
 numpy==1.21.6
-biopython>=1.70
+biopython==1.70
 tqdm==4.19.5
 scikit-learn==1.0.2
 notebook
