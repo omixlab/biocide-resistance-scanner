@@ -1,7 +1,7 @@
 from Bio import SeqIO
 import pandas as pd
 import json
-
+import os
 
 def combine_results(directory):
 
@@ -76,6 +76,9 @@ def get_platon_results(directory, fasta_df):
     #passar pelo platon
     #usar o seqio para carregar as sequencias presentes no genome.plasmid.fasta
     #criar uma lista que se chamará plasmid_ids
+    
+    if not os.path.isfile(f'{directory}/genome.plasmid.fasta'):
+        return fasta_df
 
     records = SeqIO.parse(f'{directory}/genome.plasmid.fasta', 'fasta')
     plasmid_ids = [record.id for record in records]
