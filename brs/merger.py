@@ -101,7 +101,7 @@ def get_ssg_lugia_results(directory, fasta_df):
     gene_islands = []
             
     for r, row in fasta_df.iterrows():
-        row_interval = set(range(int(row.start), int(row.end)))
+        row_interval = set(range(int(row.start.strip('>').strip('<')), int(row.end.strip('>').strip('<'))))
         for island in ssg_lugia_islands:
             island_interval = set(range(island[2], island[3]))
             intersection = row_interval.intersection(island_interval)
