@@ -122,7 +122,7 @@ def get_phispy_results(directory, fasta_df):
     phispy_islands = []
             
     for r, row in fasta_df.iterrows():
-        row_interval = set(range(int(row.start), int(row.end)+1))
+        row_interval = set(range(int(row.start.strip('>').strip('<')), int(row.end.strip('>').strip('<'))+1))
         best_phage = None
         best_phage_iou = 0
         for r_phi, row_phi in df_phispy.iterrows():
