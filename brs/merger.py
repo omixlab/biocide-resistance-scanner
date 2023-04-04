@@ -32,7 +32,7 @@ def get_abricate_results(directory, fasta_df):
         best_ioc = 0
         for _,abricate_row in df_abricate.iterrows():
             if row.chrom.split('.')[0] == abricate_row.SEQUENCE:
-                row_interval = set(range(int(row.start)-1, int(row.end)))
+                row_interval = set(range(int(row.start.strip('>').strip('<'))-1, int(row.end.strip('>').strip('<'))))
                 row_abricate_interval = set(range(abricate_row.START-1, abricate_row.END))
                 intersection = len(row_interval.intersection(row_abricate_interval))
                 union = len(row_interval.union(row_abricate_interval))
