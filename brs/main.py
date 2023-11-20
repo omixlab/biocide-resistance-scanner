@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(
                     description = 'A tool to identify biocide resistant genes in bacteria')
 def main():
 
-    argument_parser = ArgumentParser(description='Bacterial genome in a FASTA/Genbank file')
+    argument_parser = ArgumentParser(description='BRS: Biocide Resistance Scanner for Biocide Resistance Genes in Horizontally Transferred Genes')
     argument_parser.add_argument('--input', required=True, help='Input Genbank file')
     argument_parser.add_argument('--output', required=True, help='Output directory')
     argument_parser.add_argument('--evalue', default=1e-100, help='BLAST evalue threshold (default: 1e-100)')
