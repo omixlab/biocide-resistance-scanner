@@ -50,6 +50,9 @@ def get_bacmet_results(directory, fasta_df):
     bacmet_compound = []
     bacmet_gene_name = []
     bacmet_id = []
+    bacmet_organism = []
+    bacmet_identity = [] 
+    bacmet_e_value = [] 
 
     df_bacmet = pd.read_csv(f'{directory}/bacmet.csv',sep=',')
     df_bacmet['ID'] = df_bacmet['query_id'].map(lambda x: x.split(' ')[0])
@@ -60,10 +63,17 @@ def get_bacmet_results(directory, fasta_df):
             bacmet_compound.append(df_query.iloc[0].compound)
             bacmet_gene_name.append(df_query.iloc[0].gene_name)
             bacmet_id.append(df_query.iloc[0].bacmet_id)
+            bacmet_organism.append(df_query.iloc[0].organism)
+            bacmet_identity.append(df_query.iloc[0].identity)
+            bacmet_e_value.append(df_query.iloc[0]['e-value'])
+
         else:
             bacmet_compound.append(None)
             bacmet_gene_name.append(None)
             bacmet_id.append(None)
+            bacmet_organism.append(None)
+            bacmet_identity.append(None)
+            bacmet_e_value.append(None)
 
     fasta_df['bacmet_compound'] = bacmet_compound
     fasta_df['bacmet_gene'] = bacmet_gene_name
@@ -93,9 +103,15 @@ def get_ssg_lugia_results(directory, fasta_df):
     ssg_lugia_islands = []
     ssg_lugia_islands_count = 0
 
-    with open(f'{directory}/ssg_lugia.json') as reader:
-        ssg_lugia = json.loads(reader.read())
-        
+    if not os.path.isfile(f'{directory}/phispy/prophage_coordinates.tsv'):
+        fasta_df['genomic_island'] = None
+        return fasta_df
+    try:
+        with open(f'{directory}/ssg_lugia.json') as reader:
+            ssg_lugia = json.loads(reader.read())
+    except:
+        return fasta_df['genomic_island']
+
     for chrom in ssg_lugia:
         for island in ssg_lugia[chrom]:
             ssg_lugia_islands_count = ssg_lugia_islands_count + 1
@@ -120,7 +136,15 @@ def get_ssg_lugia_results(directory, fasta_df):
 
 def get_phispy_results(directory, fasta_df):
 
-    df_phispy = pd.read_csv(f'{directory}/phispy/prophage_coordinates.tsv', sep='\t', header=None)
+    if not os.path.isfile(f'{directory}/phispy/prophage_coordinates.tsv'):
+        fasta_df['phage'] = None
+        return fasta_df
+    
+    try:
+        df_phispy = pd.read_csv(f'{directory}/phispy/prophage_coordinates.tsv', sep='\t', header=None)
+    except:
+        fasta_df['phage'] = None
+        return fasta_df
 
     phispy_islands = []
             
