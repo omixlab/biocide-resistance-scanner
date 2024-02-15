@@ -8,6 +8,8 @@ A tool for detection of biocide resistance genes in horizontally tranfered regio
 $ git clone https://github.com/omixlab/biocide-resistance-scanner
 $ cd biocide-resistance-scanner
 $ conda env create --file environment.yml
+$ conda activate biocide-resistance-scanner
+$ make setup_databases
 ```
 ## Using the tool
 
